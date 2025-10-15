@@ -9,10 +9,10 @@ Each entry links to its detailed advisory markdown file.
 
 | Advisory ID | Product | Title | CVE |
 |--------------|----------|----------|-----|
-| MCSAID-2025-001 | radare2 | [NULL Pointer Dereference in `info()` (bin_ne.c) leads to DoS](./advisories/MCSAID-2025-001-radare2-nullptr-deref-bin_ne.md) | *(Pending)* |
-| MCSAID-2025-002 | radare2 | [NULL Pointer Dereference in `load()` (bin_dyldcache.c) leads to DoS](./advisories/MCSAID-2025-002-radare2-nullptr-deref-bin_dyldcache.md) | *(Pending)* |
-| MCSAID-2025-003 | scrcpy | Buffer Overflow in sc_read32be function triggered by sc_device_msg_deserialize) | *(Pending)* |
-| MCSAID-2025-004 | rtl_433 | Stack-based Buffer Overflow in `parse_rfraw()` leads to arbitrary code execution and/or crash | *(Pending)* |
+| [MCSAID-2025-001](./advisories/MCSAID-2025-001-radare2-nullptr-deref-bin_ne.md) | [radare2](https://github.com/radareorg/radare2) | [NULL Pointer Dereference in `info()` (bin_ne.c) leads to DoS](./advisories/MCSAID-2025-001-radare2-nullptr-deref-bin_ne.md) | *(Pending)* |
+| [MCSAID-2025-002](./advisories/MCSAID-2025-002-radare2-nullptr-deref-bin_dyldcache.md) | [radare2](https://github.com/radareorg/radare2) | [NULL Pointer Dereference in `load()` (bin_dyldcache.c) leads to DoS](./advisories/MCSAID-2025-002-radare2-nullptr-deref-bin_dyldcache.md) | *(Pending)* |
+| MCSAID-2025-003 | [scrcpy](https://github.com/Genymobile/scrcpy) | Buffer Overflow in sc_read32be function triggered by sc_device_msg_deserialize) | *(Pending)* |
+| MCSAID-2025-004 | [rtl_433](https://github.com/merbanan/rtl_433) | Stack-based Buffer Overflow in `parse_rfraw()` leads to arbitrary code execution and/or crash | *(Pending)* |
 
 ---
 
