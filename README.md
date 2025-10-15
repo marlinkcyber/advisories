@@ -14,7 +14,7 @@ Each entry links to its detailed advisory markdown file.
 | MCSAID-2025-003 | [scrcpy](https://github.com/Genymobile/scrcpy) | Buffer Overflow in sc_read32be function triggered by sc_device_msg_deserialize) | *(Pending)* |
 | MCSAID-2025-004 | [rtl_433](https://github.com/merbanan/rtl_433) | Stack-based Buffer Overflow in `parse_rfraw()` leads to arbitrary code execution and/or crash | *(Pending)* |
 | MCSAID-2025-005 | [FreePBX](https://www.freepbx.org/) | FreePBX core module vulnerable to reflected cross-site scripting via Asterisk HTTP Status page | [CVE-2025-59429](https://www.cve.org/CVERecord?id=CVE-2025-59429) |
-| MCSAID-2025-006 | [FreePBX](https://www.freepbx.org/) | FreePBX Endpoint Manager command injection via Network Scanning feature | [CVE-2025-59051] (https://www.cve.org/CVERecord?id=CVE-2025-59051) |
+| MCSAID-2025-006 | [FreePBX](https://www.freepbx.org/) | FreePBX Endpoint Manager command injection via Network Scanning feature | [CVE-2025-59051](https://www.cve.org/CVERecord?id=CVE-2025-59051) |
 | MCSAID-2025-007 | [FreePBX](https://www.freepbx.org/) | Reserved | *(Pending)* |
 
 ---
