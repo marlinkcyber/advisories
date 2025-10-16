@@ -1,12 +1,12 @@
 # radare2: NULL Pointer Dereference in `info()` (bin_ne.c) Leads to Denial of Service
 
-**CVE ID:** *(Pending MITRE Assignment)*
-**Reported:** 2025-10-07
-**Published:** 2025-10-08
-**Fixed:** 2025-10-08
-**Severity:** Low (Denial of Service)
-**CWE:** [CWE-476: NULL Pointer Dereference](https://cwe.mitre.org/data/definitions/476.html)
-**Discovered by:** Vlatko Kosturjak of Marlink Cyber
+- **CVE ID:** *(Pending MITRE Assignment)*
+- **Reported:** 2025-10-07
+- **Published:** 2025-10-08
+- **Fixed:** 2025-10-08
+- **Severity:** Low (Denial of Service)
+- **CWE:** [CWE-476: NULL Pointer Dereference](https://cwe.mitre.org/data/definitions/476.html)
+- **Discovered by:** Vlatko Kosturjak of Marlink Cyber
 
 ---
 
