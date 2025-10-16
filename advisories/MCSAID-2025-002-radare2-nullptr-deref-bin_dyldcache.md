@@ -1,12 +1,12 @@
 # radare2: NULL Pointer Dereference in `load()` (bin_dyldcache.c) Leads to Denial of Service
 
-**CVE ID:** *(Pending MITRE Assignment)*
-**Reported:** 2025-10-07
-**Published:** 2025-10-08
-**Fixed:** 2025-10-08
-**Severity:** Low (Denial of Service)
-**CWE:** [CWE-476: NULL Pointer Dereference](https://cwe.mitre.org/data/definitions/476.html)
-**Discovered by:** Vlatko Kosturjak of Marlink Cyber
+- **CVE ID:** *(Pending MITRE Assignment)*
+- **Reported:** 2025-10-07
+- **Published:** 2025-10-08
+- **Fixed:** 2025-10-08
+- **Severity:** Low (Denial of Service)
+- **CWE:** [CWE-476: NULL Pointer Dereference](https://cwe.mitre.org/data/definitions/476.html)
+- **Discovered by:** Vlatko Kosturjak of Marlink Cyber
 
 ---
 
@@ -34,6 +34,38 @@ To exploit vulnerability, someone must open a crafted binary file. This could im
 
 The crash occurs when `load()` attempts to access a field through a NULL pointer of type `struct RIODesc`.
 ASAN reports a segmentation fault at `bin_dyldcache.c:1159`.
+
+```
+$ ./poc crash_001.bin
+/htp/radare2/radare2/libr/..//libr/bin/p/bin_dyldcache.c:1159:81: runtime error: member access within null pointer of type 'struct RIODesc'
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==2378621==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000030 (pc 0x7c95809ce8db bp 0x7ffca9cd3350 sp 0x7ffca9cd3300 T0)
+==2378621==The signal is caused by a READ memory access.
+==2378621==Hint: address points to the zero page.
+    #0 0x7c95809ce8db in load /htp/radare2/radare2/libr/..//libr/bin/p/bin_dyldcache.c:1159
+    #1 0x7c95808d4aa3 in r_bin_object_new /htp/radare2/radare2/libr/bin/bobj.c:219
+    #2 0x7c95808c604b in r_bin_file_new_from_buffer /htp/radare2/radare2/libr/bin/bfile.c:832
+    #3 0x7c9580872a5d in r_bin_open_buf /htp/radare2/radare2/libr/bin/bin.c:307
+    #4 0x5e86d88b170f in fuzz_buffer (/htp/radare2/radare2/poc+0x170f) (BuildId: 617844968f9f200c1ab60a183109e999d0481ccf)
+    #5 0x5e86d88b1993 in main (/htp/radare2/radare2/poc+0x1993) (BuildId: 617844968f9f200c1ab60a183109e999d0481ccf)
+    #6 0x7c957d22a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #7 0x7c957d22a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #8 0x5e86d88b13a4 in _start (/htp/radare2/radare2/poc+0x13a4) (BuildId: 617844968f9f200c1ab60a183109e999d0481ccf)
+
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV /htp/radare2/radare2/libr/..//libr/bin/p/bin_dyldcache.c:1159 in load
+==2378621==ABORTING
+```
+
+## Test
+
+```
+$ ./poc crash_001.bin
+```
+
+[crash_001.zip](https://github.com/user-attachments/files/22733337/crash_001.zip)
+
 
 ---
 
