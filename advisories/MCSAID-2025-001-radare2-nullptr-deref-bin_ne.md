@@ -1,5 +1,6 @@
 # radare2: NULL Pointer Dereference in `info()` (bin_ne.c) Leads to Denial of Service
 
+- **Advisory ID:** MCSAID-2025-001
 - **CVE ID:** *(Pending MITRE Assignment)*
 - **Reported:** 2025-10-07
 - **Published:** 2025-10-08
