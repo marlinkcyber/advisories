@@ -1,14 +1,14 @@
 # proxychains-ng: Stack-based buffer overflow in `proxy_from_string()` (src/libproxychains.c)
 
-**Advisory ID:** MCSAID-2025-008
-**CVE ID:** *(Pending)*
-**Product:** [proxychains-ng](https://github.com/rofl0r/proxychains-ng)
-**Reported:** 2025-10-18.
-**Published:** 2025-10-20.
-**Fixed:** commit [cc005b7132811c9149e77b5e33cff359fc95512e](https://github.com/httpsgithu/proxychains-ng/commit/cc005b7132811c9149e77b5e33cff359fc95512e)
-**Severity:** High (Memory corruption / crash)
-**CWE:** [CWE-120: Buffer Copy without Checking Size of Input (Classic Buffer Overflow)](https://cwe.mitre.org/data/definitions/120.html)
-**Discovered by:** Vlatko Kosturjak of Marlink Cyber
+- **Advisory ID:** MCSAID-2025-008
+- **CVE ID:** *(Pending)*
+- **Product:** [proxychains-ng](https://github.com/rofl0r/proxychains-ng)
+- **Reported:** 2025-10-18.
+- **Published:** 2025-10-20.
+- **Fixed:** commit [cc005b7132811c9149e77b5e33cff359fc95512e](https://github.com/httpsgithu/proxychains-ng/commit/cc005b7132811c9149e77b5e33cff359fc95512e)
+- **Severity:** High (Memory corruption / crash)
+- **CWE:** [CWE-120: Buffer Copy without Checking Size of Input (Classic Buffer Overflow)](https://cwe.mitre.org/data/definitions/120.html)
+- **Discovered by:** Vlatko Kosturjak of Marlink Cyber
 
 ---
 
