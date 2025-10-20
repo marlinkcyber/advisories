@@ -10,7 +10,7 @@ Each entry links to its detailed advisory markdown file.
 
 | Advisory ID | Product | Title | CVE |
 |--------------|----------|----------|-----|
-| [MCSAID-2025-008](./advisories/MCSAID-2025-008-proxychains-ng-stack-buffer-overflow-proxy_from_string.md) | [proxychains-ng](https://github.com/rofl0r/proxychains-ng) | [Stack Buffer Overflow in proxy_from_string() leads to arbitrary code execution and/or crash](MCSAID-2025-008-proxychains-ng-stack-buffer-overflow-proxy_from_string.md) | *(Pending)* |
+| [MCSAID-2025-008](./advisories/MCSAID-2025-008-proxychains-ng-stack-buffer-overflow-proxy_from_string.md) | [proxychains-ng](https://github.com/rofl0r/proxychains-ng) | [Stack Buffer Overflow in proxy_from_string() leads to arbitrary code execution and/or crash](./advisories/MCSAID-2025-008-proxychains-ng-stack-buffer-overflow-proxy_from_string.md) | *(Pending)* |
 | MCSAID-2025-007 | [FreePBX](https://www.freepbx.org/) | Reserved | *(Pending)* |
 | MCSAID-2025-006 | [FreePBX](https://www.freepbx.org/) | FreePBX Endpoint Manager command injection via Network Scanning feature | [CVE-2025-59051](https://www.cve.org/CVERecord?id=CVE-2025-59051) |
 | MCSAID-2025-005 | [FreePBX](https://www.freepbx.org/) | FreePBX core module vulnerable to reflected cross-site scripting via Asterisk HTTP Status page | [CVE-2025-59429](https://www.cve.org/CVERecord?id=CVE-2025-59429) |
