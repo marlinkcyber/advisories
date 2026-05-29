@@ -22,8 +22,6 @@ miniaudio version 0.11.25 and earlier contain a heap out-of-bounds read vulnerab
 | -------------------- | --------- |
 | miniaudio <= v0.11.25   | Vulnerable |
 
-Awaiting fix.
-
 ---
 
 ## Proof of Concept
@@ -216,7 +214,8 @@ A crafted WAV file with an unterminated BEXT coding history field causes ma_dr_w
 
 ## Mitigations
 
-- Awaiting fix.
+- [1df46ae9a0eed5aa9f58b179d2cc4af5d23f8bde](https://github.com/mackron/miniaudio/commit/1df46ae9a0eed5aa9f58b179d2cc4af5d23f8bde)
+- [04e40d66a7ba1632f93ec1328d4b42ad986e3ee0](https://github.com/mackron/dr_libs/commit/04e40d66a7ba1632f93ec1328d4b42ad986e3ee0) -> Upstream patch
 
 ---
 
