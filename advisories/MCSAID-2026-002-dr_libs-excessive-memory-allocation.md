@@ -22,8 +22,6 @@ dr_libs dr_flac.h version 0.13.3 and earlier contain an uncontrolled memory allo
 | -------------------- | --------- |
 | dr_libs dr_flac.h <= v0.13.3   | Vulnerable |
 
-Awaiting fix.
-
 ---
 
 ## Proof of Concept
@@ -313,7 +311,10 @@ An attacker supplying a crafted FLAC stream can force a single heap allocation o
 
 ## Mitigations
 
-- Awaiting fix.
+- [fefced4a64adfb1a68a2d31d882366e56096dee8](https://github.com/mackron/dr_libs/commit/fefced4a64adfb1a68a2d31d882366e56096dee8)
+- [4f5a4cd3b57564d969443c580c75857e039f100a](https://github.com/mackron/dr_libs/commit/4f5a4cd3b57564d969443c580c75857e039f100a)
+- [663239a3d0460c33bd5b6e5166edcb404e3df676](https://github.com/mackron/dr_libs/commit/663239a3d0460c33bd5b6e5166edcb404e3df676)
+
 
 ---
 
