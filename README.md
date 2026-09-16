@@ -8,6 +8,8 @@ Each entry links to its detailed advisory markdown file.
 
 ## Advisories
 
+* 2026
+
 | Advisory ID | Product | Title | CVE or Reference |
 |--------------|----------|----------|-----|
 | [MCSAID-2026-005](./advisories/MCSAID-2026-005-jkuhlmann-cgltf-sparse-accessor-validation-integer-overflow.md) | [cgltf](https://github.com/jkuhlmann/cgltf) | [jkuhlmann / cgltf <= 1.15 Sparse Accessor Validation Integer Overflow](./advisories/MCSAID-2026-005-jkuhlmann-cgltf-sparse-accessor-validation-integer-overflow.md) | [CVE-2026-32845](https://www.cve.org/CVERecord?id=CVE-2026-32845) |
@@ -15,6 +17,13 @@ Each entry links to its detailed advisory markdown file.
 | [MCSAID-2026-003](./advisories/MCSAID-2026-003-miniaudio-out-of-bounds-read.md) | [miniaudio](https://github.com/mackron/miniaudio) | [miniaudio Out-of-Bounds Read in BEXT Coding History Parsing](./advisories/MCSAID-2026-003-miniaudio-out-of-bounds-read.md) | [CVE-2026-32837](https://www.cve.org/CVERecord?id=CVE-2026-32837) |
 | [MCSAID-2026-002](./advisories/MCSAID-2026-002-dr_libs-excessive-memory-allocation.md) | [dr_libs](https://github.com/mackron/dr_libs) | [dr_libs Excessive Memory Allocation in PICTURE Metadata Parsing](./advisories/MCSAID-2026-002-dr_libs-excessive-memory-allocation.md) | [CVE-2026-32836](https://www.cve.org/CVERecord?id=CVE-2026-32836) |
 | [MCSAID-2026-001](./advisories/MCSAID-2026-001-dr-libs-heap-overflow.md) | [dr_libs](https://github.com/mackron/dr_libs) | [Heap overflow leads to Denial of Service](./advisories/MCSAID-2026-001-dr-libs-heap-overflow.md) | [CVE-2026-29022](https://www.cve.org/CVERecord?id=CVE-2026-29022) |
+
+* 2025
+
+| Advisory ID | Product | Title | CVE or Reference |
+|--------------|----------|----------|-----|
+| [MCSAID-2025-017](./advisories/MCSAID-2025-017-cdt-out-of-bounds-read-opposedvertexind.md) | [CDT](https://github.com/artem-ogre/CDT) | [CDT before 1.4.5 Out-of-Bounds Read in `CDT::opposedVertexInd()` leads to Denial of Service](./advisories/MCSAID-2025-017-cdt-out-of-bounds-read-opposedvertexind.md) | [CVE-2025-15647](https://www.cve.org/CVERecord?id=CVE-2025-15647) |
+| [MCSAID-2025-016](./advisories/MCSAID-2025-016-ugrep-heap-buffer-over-read-zopen-getcode.md) | [ugrep](https://github.com/Genivia/ugrep) | [ugrep before 7.6.0 Heap Buffer Over-read in `getcode()` via .Z decompression](./advisories/MCSAID-2025-016-ugrep-heap-buffer-over-read-zopen-getcode.md) | [CVE-2025-15614](https://www.cve.org/CVERecord?id=CVE-2025-15614) |
 | [MCSAID-2025-015](./advisories/MCSAID-2025-015-isc-bind-assertion-failure-hhit-brid.md) | [ISC BIND](https://www.isc.org/bind/) | [Assertion Failure in HHIT/BRID leads to Denial of Service](./advisories/MCSAID-2025-015-isc-bind-assertion-failure-hhit-brid.md) | [CVE-2025-13878](https://www.cve.org/CVERecord?id=CVE-2025-13878) |
 | [MCSAID-2025-014](./advisories/MCSAID-2025-014-ruckus-vriot-hardcoded-support-credentials-rce.md) | [RUCKUS IoT Controller](https://support.ruckuswireless.com/products/152-ruckus-iot-controller#f-product-facet=vRIoT) | [RUCKUS vRIoT Remote Root Access via Hardcoded Credentials](./advisories/MCSAID-2025-014-ruckus-vriot-hardcoded-support-credentials-rce.md) | [CVE-2025-69426](https://www.cve.org/CVERecord?id=CVE-2025-69426) |
 | [MCSAID-2025-013](./advisories/MCSAID-2025-013-ruckus-vriot-commander-hardcoded-tokens-rce.md) | [RUCKUS IoT Controller](https://support.ruckuswireless.com/products/152-ruckus-iot-controller#f-product-facet=vRIoT) | [RUCKUS vRIoT Command Execution as Root via Hardcoded Tokens for the Network-Exposed Service](./advisories/MCSAID-2025-013-ruckus-vriot-commander-hardcoded-tokens-rce.md) | [CVE-2025-69425](https://www.cve.org/CVERecord?id=CVE-2025-69425) |
