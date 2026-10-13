@@ -1,6 +1,6 @@
 # Mongoose: Out-of-Bounds Read in TLS 1.3 Certificate Chain Parsing leads to Denial of Service
 
-- **Advisory ID:** MCSAID-2026-XXX
+- **Advisory ID:** MCSAID-2026-007
 - **CVE ID:** [CVE-2026-52061](https://www.cve.org/CVERecord?id=CVE-2026-52061)
 - **GHSA ID:** [GHSA-pfr9-hqr2-78rq](https://github.com/cesanta/mongoose/security/advisories/GHSA-pfr9-hqr2-78rq)
 - **Reported:** 2026-04-27
