@@ -15,7 +15,7 @@
 
 ## Summary
 
-MOOS-IvP iSay through 24.8.1 contains a remote code execution vulnerability in the SAY_MOOS variable handler that passes unsanitized text to a shell command. Attackers can publish SAY_MOOS messages containing backticks or command substitution syntax to execute arbitrary commands as the iSay process user.
+iSay concatenates `SAY_MOOS` text into a double-quoted shell command line and runs it with `system()`. Command substitution still happens inside double quotes, and a literal quote closes the string, so any MOOS publisher gets arbitrary command execution as the iSay user. No configuration is required and the speech binaries need not even exist.
 
 ---
 
@@ -26,14 +26,90 @@ MOOS-IvP iSay through 24.8.1 contains a remote code execution vulnerability in t
 | moos-ivp <= 24.8.1 | Vulnerable |
 | moos-ivp `main` from commit [`f56c6907aed8`](https://github.com/moos-ivp/moos-ivp/commit/f56c6907aed8b1c4b35b4b7b94593876dfa95646) | Fixed |
 
+Tested against: MOOS-IvP `1de9ae146cd63c209e8c3fd81611a4ed2472971b`, latest master.
+
+---
+
+## Impact
+
+Arbitrary OS command execution as the user running iSay, on the vehicle or the
+shoreside box.  Combined with [MCSAID-2026-010](./MCSAID-2026-010-core-moos-missing-authentication-for-moosdb-publish-subscribe-and-db-clear.md) (no authentication on the MOOSDB
+listener) this is **unauthenticated remote code execution** with a single
+publication.  This triage raises the severity from high to critical for that
+reason.
+
+---
+
+## Exploitation
+
+Any MOOS publisher able to send SAY_MOOS to a deployed iSay - i.e. any peer that can reach the MOOSDB port ([MCSAID-2026-010](./MCSAID-2026-010-core-moos-missing-authentication-for-moosdb-publish-subscribe-and-db-clear.md)), or anything upstream of a bridge ([MCSAID-2026-016](./MCSAID-2026-016-essential-moos-pshare-unauthenticated-udp-datagram-republishing.md) and [MCSAID-2026-017](./MCSAID-2026-017-essential-moos-pmoosbridge-unauthenticated-udp-packet-injection.md)).
+
+Preconditions:
+
+* iSay deployed in the mission (it is a stock app, built by default).
+* No configuration is needed: `os_mode` defaults to `both` (Sayer.cpp:45).
+* The `say`/`espeak` binaries need not exist - the shell expands the payload before failing to exec.
+
 ---
 
 ## Details
 
 ### Affected code
 
-- **Repository:** [moos-ivp](https://github.com/moos-ivp/moos-ivp)
-- **Location:** [`ivp/src/iSay/Sayer.cpp#L416`](https://github.com/moos-ivp/moos-ivp/blob/1de9ae146cd63c209e8c3fd81611a4ed2472971b/ivp/src/iSay/Sayer.cpp#L416)
+* **`ivp/src/iSay/Sayer.cpp`** - lines 79-81: OnNewMail(): SAY_MOOS -> addUtterance(sval, ...)
+* **`ivp/src/iSay/Utterance.cpp`** - lines 63-71: initFromString(): a plain string with no say={ / say=" / file= is stored verbatim
+* **`ivp/src/iSay/Sayer.cpp`** - lines 343-360: cmd = "say -r " + rate; cmd += " \"" + text + "\" ";  (and the espeak branch)
+* **`ivp/src/iSay/Sayer.cpp`** - line 416: result = system(cmd.c_str());
+
+### Root cause
+
+`SAY_MOOS` text is stored verbatim by `Utterance::initFromString()` whenever it
+does not look like the structured form, then concatenated into a command line
+inside double quotes and handed to `system()`.  Double quotes do not stop the
+shell from performing command substitution, so `$(...)` and backticks execute;
+a literal `"` closes the quote and lets the attacker append arbitrary commands
+with `;`.
+
+---
+
+## Reproduction
+
+### Test environment
+
+Ubuntu 24.04, x86-64, gcc 13.3.0, cmake 3.28.3, FLTK 1.3.8, Python 3.14.
+
+All four MOOS repositories were built from source with their default settings -
+Release `-O2`, and every resulting binary is a hardened PIE with a stack canary,
+FORTIFY, NX and full RELRO:
+
+| Repository | Version | Built with |
+| --- | --- | --- |
+| core-moos | `v10.4.0-49-gec9c77c` (`ec9c77c`) | `cmake .. && make` |
+| essential-moos | `10.0.1-release-22-gb897ea8` (`b897ea8`) | `cmake -DMOOS_DIR=<core-moos build> .. && make` |
+| ui-moos | commit `50b9c6c` | `cmake -DBUILD_GRAPHICAL_TOOLS=ON -DBUILD_UMS=ON -DMOOS_DIR=<core-moos build> .. && make` |
+| MOOS-IvP | `1de9ae146cd63c209e8c3fd81611a4ed2472971b` | `./build-moos.sh && ./build-ivp.sh` |
+
+This is MOOS-IvP specific code. It does not exist in core-moos, essential-moos or ui-moos, so MOOS-IvP is the only affected repository.
+
+#### Tested / reproduced
+
+Yes - reproduced against MOOS-IvP `1de9ae146`, default production build (`./build-moos.sh && ./build-ivp.sh`).
+
+### Steps and results
+
+iSay was started against a stock MOOSDB with the default configuration.  One
+publication of
+
+    SAY_MOOS = $(id > /tmp/.../proof.txt; touch /tmp/.../PWNED)
+
+produced the assembled command line (iSay helpfully publishes it as
+`ISAY_DEBUGA`):
+
+    say -r 200 "$(id > /tmp/.../proof.txt; touch /tmp/.../PWNED)"
+
+and the proof file contained `uid=1001(ai) gid=1001(ai) ...`.  A second payload,
+`hello" ; echo "INJECTED-VIA-QUOTE-BREAK" >> proof ; echo "`, also executed, so
+the injection is not limited to command substitution.
 
 ---
 
@@ -45,6 +121,15 @@ The upstream maintainers implemented their own fix in [Pull Request #141](https:
 
 - Pull request: [Pull Request #141](https://github.com/moos-ivp/moos-ivp/pull/141) (merged 2026-09-11)
 - Fix commit: [f56c6907aed8](https://github.com/moos-ivp/moos-ivp/commit/f56c6907aed8b1c4b35b4b7b94593876dfa95646)
+
+### Recommended fix
+
+Do not build a shell command line.  Execute the speech binary directly with an
+`argv` array (`posix_spawn`/`fork`+`execvp`, or `boost::process`), passing the
+utterance as a separate argument, or pipe the text on stdin (`espeak --stdin`
+already supports this).  Separately, treat `SAY_MOOS` as a privileged variable:
+either restrict who may publish it, or restrict the accepted character set to
+something a text-to-speech engine actually needs.
 
 ---
 

@@ -15,7 +15,7 @@
 
 ## Summary
 
-MOOS-IvP through 24.8.1 contains a denial of service vulnerability in the Demuxer::addMuxPacket() function that trusts the packet count declared in mux headers without validation. Attackers can declare arbitrarily large packet counts to trigger unbounded memory allocation, exhausting system resources and causing service unavailability.
+The BHV_IPF demultiplexer parses the declared fragment count digit by digit into a signed `int` with no maximum and pre-fills two vectors with that many entries. A 21-byte publication requesting 900 million fragments grew a live uFunctionVis by 3.5 GB in 30 seconds. The same scanning loops also read past the end of the string when the expected commas are absent.
 
 ---
 
@@ -26,14 +26,82 @@ MOOS-IvP through 24.8.1 contains a denial of service vulnerability in the Demuxe
 | moos-ivp <= 24.8.1 | Vulnerable |
 | moos-ivp `main` from commit [`1db7a5d19ffc`](https://github.com/moos-ivp/moos-ivp/commit/1db7a5d19ffc5dfec66e121af320cbcff24361bc) | Fixed |
 
+Tested against: MOOS-IvP `1de9ae146cd63c209e8c3fd81611a4ed2472971b`, latest master.
+
+---
+
+## Impact
+
+Memory exhaustion of the operator's display process from a single small
+message, plus an out-of-bounds read.  This is a remote crash/freeze of the
+autonomy visualisation tool.
+
+---
+
+## Exploitation
+
+Any MOOS publisher of BHV_IPF.
+
+Preconditions:
+
+* uFunctionVis running (stock app). Any other consumer of Demuxer is equally affected.
+
 ---
 
 ## Details
 
 ### Affected code
 
-- **Repository:** [moos-ivp](https://github.com/moos-ivp/moos-ivp)
-- **Location:** [`ivp/src/lib_ivpbuild/Demuxer.cpp#L79`](https://github.com/moos-ivp/moos-ivp/blob/1de9ae146cd63c209e8c3fd81611a4ed2472971b/ivp/src/lib_ivpbuild/Demuxer.cpp#L79)
+* **`ivp/src/lib_ivpbuild/Demuxer.cpp`** - lines 88-144: addMuxPacket(): str_id, str_total and str_ix are accumulated with `x = x*10 + digit` in signed ints with no grammar, no maximum, and no end-of-string check
+* **`ivp/src/lib_ivpbuild/DemuxUnit.cpp`** - lines 34-46: DemuxUnit(id, total_packets, ...): for(i=0; i<g_total_packets; i++) { m_data.push_back(""); m_flag.push_back(false); }
+* **`ivp/src/uFunctionVis/FV_MOOSApp.cpp`** - lines 63-66: BHV_IPF from the bus goes straight to addMuxPacket; removeStaleUnits() is never called by this consumer
+
+### Root cause
+
+The mux header is `P,<id>,<total>,<index>,<body>`.  `total` is parsed digit by
+digit into a signed `int` and passed as `unsigned int` to `DemuxUnit`, which
+`push_back`s that many `std::string` and `bool` entries.  Nine digits is enough
+to request ~29 GB of vector storage from a 21-byte message.
+
+The same scanning loops use `str[cix]` with no bound, so a mux header without
+the expected commas reads past the end of the string.  And because
+`removeStaleUnits()` is never invoked by uFunctionVis, incomplete units
+accumulate for every distinct attacker-chosen `id`.
+
+---
+
+## Reproduction
+
+### Test environment
+
+Ubuntu 24.04, x86-64, gcc 13.3.0, cmake 3.28.3, FLTK 1.3.8, Python 3.14.
+
+All four MOOS repositories were built from source with their default settings -
+Release `-O2`, and every resulting binary is a hardened PIE with a stack canary,
+FORTIFY, NX and full RELRO:
+
+| Repository | Version | Built with |
+| --- | --- | --- |
+| core-moos | `v10.4.0-49-gec9c77c` (`ec9c77c`) | `cmake .. && make` |
+| essential-moos | `10.0.1-release-22-gb897ea8` (`b897ea8`) | `cmake -DMOOS_DIR=<core-moos build> .. && make` |
+| ui-moos | commit `50b9c6c` | `cmake -DBUILD_GRAPHICAL_TOOLS=ON -DBUILD_UMS=ON -DMOOS_DIR=<core-moos build> .. && make` |
+| MOOS-IvP | `1de9ae146cd63c209e8c3fd81611a4ed2472971b` | `./build-moos.sh && ./build-ivp.sh` |
+
+This is MOOS-IvP specific code. It does not exist in core-moos, essential-moos or ui-moos, so MOOS-IvP is the only affected repository.
+
+#### Tested / reproduced
+
+Yes - reproduced against MOOS-IvP `1de9ae146`, default production build (`./build-moos.sh && ./build-ivp.sh`).
+
+### Steps and results
+
+* `P,` (no delimiters): `AddressSanitizer: stack-buffer-overflow ... READ of
+  size 1` at Demuxer.cpp:98.
+* `P,bb,900000000,1,body` under a 1.5 GB address-space limit:
+  `terminate called after throwing an instance of 'std::bad_alloc'`.
+* End to end against a live ASan `uFunctionVis`: that same 21-byte publication
+  grew the viewer by **3.49 GB in 30 seconds** and it was still allocating; an
+  earlier unattended run reached 13 GB RSS.
 
 ---
 
@@ -43,6 +111,15 @@ Fixed upstream in the `main` branch; no tagged release containing the fix exists
 
 - Pull request: [Pull Request #129](https://github.com/moos-ivp/moos-ivp/pull/129) (merged 2026-10-03)
 - Fix commit: [1db7a5d19ffc](https://github.com/moos-ivp/moos-ivp/commit/1db7a5d19ffc5dfec66e121af320cbcff24361bc)
+
+### Recommended fix
+
+Parse the header with a strict grammar (`std::from_chars` on a bounded
+`string_view`), require every delimiter, and cap `total_packets`, the id length,
+the per-packet body size and the reassembled size.  Reserve lazily rather than
+pre-filling the vectors.  Cap the number of concurrent incomplete units per
+source and expire them on a timer inside `Demuxer` itself, so a consumer cannot
+forget to call `removeStaleUnits()`.
 
 ---
 

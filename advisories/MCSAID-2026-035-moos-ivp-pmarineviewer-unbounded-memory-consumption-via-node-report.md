@@ -15,7 +15,7 @@
 
 ## Summary
 
-MOOS-IvP pMarineViewer through 24.8.1 fails to limit the number of tracked node identities from NODE_REPORT messages, allowing attackers to exhaust memory by supplying unbounded distinct node names. Attackers can publish crafted NODE_REPORT data to cause memory exhaustion and stall the operator display without authentication.
+pMarineViewer accepts every unique `NODE_REPORT` name into its contact ledger, bounds only the per-node history, and redraws by walking the full vehicle list every frame with no work budget and no automatic stale eviction. 430 kB of node reports added 4000 permanent contacts, 18.7 MB of memory and a 23-fold increase in render cost to the operator's display.
 
 ---
 
@@ -26,14 +26,78 @@ MOOS-IvP pMarineViewer through 24.8.1 fails to limit the number of tracked node 
 | moos-ivp <= 24.8.1 | Vulnerable |
 | moos-ivp `main` from commit [`5650f5eb824d`](https://github.com/moos-ivp/moos-ivp/commit/5650f5eb824dbb94a790c4f4ca07d525ada5a12a) | Fixed |
 
+Tested against: MOOS-IvP `1de9ae146cd63c209e8c3fd81611a4ed2472971b`, latest master.
+
+---
+
+## Impact
+
+Memory growth and a collapsing frame rate in the operator's situational-awareness
+display - i.e. the operator loses the picture at exactly the moment an attacker
+is doing something else.  It is a usability/availability attack on the human in
+the loop rather than on the autonomy itself.
+
+---
+
+## Exploitation
+
+Any field publisher able to supply NODE_REPORT data, directly or through a bridge.
+
+Preconditions:
+
+* pMarineViewer running - the standard operator display. No configuration change needed.
+
 ---
 
 ## Details
 
 ### Affected code
 
-- **Repository:** [moos-ivp](https://github.com/moos-ivp/moos-ivp)
-- **Location:** [`ivp/src/lib_geodaid/ContactLedger.cpp#L186`](https://github.com/moos-ivp/moos-ivp/blob/1de9ae146cd63c209e8c3fd81611a4ed2472971b/ivp/src/lib_geodaid/ContactLedger.cpp#L186)
+* **`ivp/src/pMarineViewer/PMV_MOOSApp.cpp`** - lines 324-359: NODE_REPORT / NODE_REPORT_LOCAL are subscribed by default and handed to the ContactLedger
+* **`ivp/src/lib_geodaid/ContactLedger.cpp`** - lines 37-47: every NAME becomes a new ledger entry; the history cap is per node, not on the number of nodes
+* **`ivp/src/pMarineViewer/PMV_Viewer.cpp`** - lines 182-311: the draw path enumerates every vehicle every frame with no per-frame work budget
+
+### Root cause
+
+Node identity is a name in a `NODE_REPORT`.  The viewer accepts every new name
+into its `ContactLedger`, bounds only the per-node history, and redraws by
+walking the full vehicle list each frame.  Stale eviction is not enabled on the
+default path and there is no cap on the number of nodes.
+
+---
+
+## Reproduction
+
+### Test environment
+
+Ubuntu 24.04, x86-64, gcc 13.3.0, cmake 3.28.3, FLTK 1.3.8, Python 3.14.
+
+All four MOOS repositories were built from source with their default settings -
+Release `-O2`, and every resulting binary is a hardened PIE with a stack canary,
+FORTIFY, NX and full RELRO:
+
+| Repository | Version | Built with |
+| --- | --- | --- |
+| core-moos | `v10.4.0-49-gec9c77c` (`ec9c77c`) | `cmake .. && make` |
+| essential-moos | `10.0.1-release-22-gb897ea8` (`b897ea8`) | `cmake -DMOOS_DIR=<core-moos build> .. && make` |
+| ui-moos | commit `50b9c6c` | `cmake -DBUILD_GRAPHICAL_TOOLS=ON -DBUILD_UMS=ON -DMOOS_DIR=<core-moos build> .. && make` |
+| MOOS-IvP | `1de9ae146cd63c209e8c3fd81611a4ed2472971b` | `./build-moos.sh && ./build-ivp.sh` |
+
+This is MOOS-IvP specific code. It does not exist in core-moos, essential-moos or ui-moos, so MOOS-IvP is the only affected repository.
+
+#### Tested / reproduced
+
+Yes - reproduced against MOOS-IvP `1de9ae146`, default production build (`./build-moos.sh && ./build-ivp.sh`).
+
+### Steps and results
+
+430 kB of `NODE_REPORT` traffic (4000 unique names) against a stock
+pMarineViewer running headless:
+
+    RSS  161576 kB -> 180732 kB   (+18.7 MB)
+    CPU  6.6% -> 151.0% of a core (23x; more than one core saturated)
+
+and the 4000 identities stay in the ledger indefinitely.
 
 ---
 
@@ -43,6 +107,14 @@ Fixed upstream in the `main` branch; no tagged release containing the fix exists
 
 - Pull request: [Pull Request #134](https://github.com/moos-ivp/moos-ivp/pull/134) (merged 2026-09-11)
 - Fix commit: [5650f5eb824d](https://github.com/moos-ivp/moos-ivp/commit/5650f5eb824dbb94a790c4f4ca07d525ada5a12a)
+
+### Recommended fix
+
+Enrol node identities (or at least require them to have been seen by an
+authenticated broker), cap the number of active contacts and the total history,
+rate-limit the creation of new identities, evict stale contacts automatically by
+default, and bound per-frame rendering work (cull off-screen contacts, or cap
+the number drawn per frame).
 
 ---
 

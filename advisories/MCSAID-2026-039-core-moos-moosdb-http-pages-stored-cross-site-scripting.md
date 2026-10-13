@@ -15,7 +15,7 @@
 
 ## Summary
 
-MOOS core-moos through 10.4.0 fails to escape database contents when rendering MOOSDB HTTP pages, allowing attackers to inject malicious scripts. Any MOOS publisher can set variable values containing script payloads that execute in the browser of operators viewing the web interface.
+The MOOSDB web pages splice variable values, sources, communities and names into HTML text nodes, into quoted attributes and into URLs with no contextual escaping and no Content-Security-Policy. Any MOOS publisher can therefore store cross-site scripting in the MOOSDB web origin, from which the same-origin poke endpoint of [MCSAID-2026-014](./MCSAID-2026-014-core-moos-moosdb-http-server-unauthenticated-variable-write.md) is directly reachable.
 
 ---
 
@@ -25,14 +25,91 @@ MOOS core-moos through 10.4.0 fails to escape database contents when rendering M
 |---------|--------|
 | core-moos <= 10.4.0 | Vulnerable |
 
+Tested against: core-moos `v10.4.0-49-gec9c77c` (commit `ec9c77c68fcbdef8f5e4c60fe243acd223433f0c`), latest master; and MOOS-IvP `1de9ae146cd63c209e8c3fd81611a4ed2472971b`, latest master, which bundles the same code.
+
+---
+
+## Impact
+
+Stored cross-site scripting in the MOOSDB web origin.  From there the script has
+same-origin access to the poke endpoint of [MCSAID-2026-014](./MCSAID-2026-014-core-moos-moosdb-http-server-unauthenticated-variable-write.md), so it can write helm and
+override variables from the operator's browser, and it can be used to pivot
+around the operator's network.  Display forgery (making the operator see wrong
+values) is arguably the worse outcome in an autonomy context.
+
+---
+
+## Exploitation
+
+Any MOOS publisher ([MCSAID-2026-010](./MCSAID-2026-010-core-moos-missing-authentication-for-moosdb-publish-subscribe-and-db-clear.md)), or any HTTP client that can poke a variable ([MCSAID-2026-014](./MCSAID-2026-014-core-moos-moosdb-http-server-unauthenticated-variable-write.md)).
+
+Preconditions:
+
+* The optional HTTP server enabled, and an operator viewing the page.
+
 ---
 
 ## Details
 
 ### Affected code
 
-- **Repository:** [core-moos](https://github.com/themoos/core-moos)
-- **Location:** [`Core/libMOOS/DB/HTTPConnection.cpp#L460`](https://github.com/themoos/core-moos/blob/ec9c77c68fcbdef8f5e4c60fe243acd223433f0c/Core/libMOOS/DB/HTTPConnection.cpp#L460)
+Each affected file is listed twice: first at its path in **core-moos** git master (commit `ec9c77c`), which is where a fix has to land, then at its path inside the copy bundled in MOOS-IvP under `MOOS_Jul2724/MOOSCore`. The two copies are byte-identical unless stated otherwise.
+
+* **`Core/libMOOS/DB/HTTPConnection.cpp`** - lines 428-484: BuildSingleVariableWebPageContents(): CHTMLTag Form(wp,"FORM","action='/"+m_sFocusVariable+"'"); sControl = MOOSFormat("<input name=NewValue value=\"%s\">", Msg.GetAsString().c_str()); and the source/community cells
+* **`MOOS_Jul2724/MOOSCore/Core/libMOOS/DB/HTTPConnection.cpp`** - lines 428-484: BuildSingleVariableWebPageContents(): CHTMLTag Form(wp,"FORM","action='/"+m_sFocusVariable+"'"); sControl = MOOSFormat("<input name=NewValue value=\"%s\">", Msg.GetAsString().c_str()); and the source/community cells
+* **`Core/libMOOS/DB/HTTPConnection.cpp`** - lines 490-577: BuildFullDBWebPageContents(): the same pattern for every row
+* **`MOOS_Jul2724/MOOSCore/Core/libMOOS/DB/HTTPConnection.cpp`** - lines 490-577: BuildFullDBWebPageContents(): the same pattern for every row
+* **`Core/libMOOS/DB/HTTPConnection.cpp`**: no Content-Security-Policy header is emitted
+* **`MOOS_Jul2724/MOOSCore/Core/libMOOS/DB/HTTPConnection.cpp`**: no Content-Security-Policy header is emitted
+
+### Root cause
+
+Variable values, sources, communities and names are concatenated straight into
+HTML - into element bodies, into a double-quoted `value=` attribute, into a
+single-quoted `action=` attribute and into an `href=` URL - with no contextual
+encoding and no CSP.  A value of `"><script>...</script>` closes the `value`
+attribute and the tag and executes.
+
+---
+
+## Reproduction
+
+### Test environment
+
+Ubuntu 24.04, x86-64, gcc 13.3.0, cmake 3.28.3, FLTK 1.3.8, Python 3.14.
+
+All four MOOS repositories were built from source with their default settings -
+Release `-O2`, and every resulting binary is a hardened PIE with a stack canary,
+FORTIFY, NX and full RELRO:
+
+| Repository | Version | Built with |
+| --- | --- | --- |
+| core-moos | `v10.4.0-49-gec9c77c` (`ec9c77c`) | `cmake .. && make` |
+| essential-moos | `10.0.1-release-22-gb897ea8` (`b897ea8`) | `cmake -DMOOS_DIR=<core-moos build> .. && make` |
+| ui-moos | commit `50b9c6c` | `cmake -DBUILD_GRAPHICAL_TOOLS=ON -DBUILD_UMS=ON -DMOOS_DIR=<core-moos build> .. && make` |
+| MOOS-IvP | `1de9ae146cd63c209e8c3fd81611a4ed2472971b` | `./build-moos.sh && ./build-ivp.sh` |
+
+The affected code lives in **core-moos** (`v10.4.0-49-gec9c77c`, commit `ec9c77c`) and is also bundled inside MOOS-IvP under `MOOS_Jul2724/MOOSCore`. Both copies were checked; unless noted otherwise in the text they are byte-identical, so a fix belongs in core-moos and MOOS-IvP needs to pick it up.
+
+#### Tested / reproduced
+
+Yes - reproduced against standalone core-moos `v10.4.0-49-gec9c77c` (commit `ec9c77c`), default production build (`cmake .. && make`, Release -O2, hardened PIE), and against the copy bundled in MOOS-IvP.
+
+### Steps and results
+
+One MOOS publication with
+`sval='"><script>fetch("/MOOS_MANUAL_OVERRIDE?NewValue=false")</script>'`,
+`src='<img src=x onerror=alert(document.domain)>'`,
+`community='<svg onload=alert(1)>'` produced, verbatim in the served page:
+
+    <TD ><input name=NewValue value=""><script>fetch("/MOOS_MANUAL_OVERRIDE?NewValue=false")</script>"></TD>
+    <TD ><img src=x onerror=alert(document.domain)></TD>
+    <TD ><svg onload=alert(1)></TD>
+
+Response headers carried no `Content-Security-Policy`.  A variable *name*
+containing `'><script>alert('name')` was also reflected into the `FORM action=`
+and `A href=` attributes (the request parser strips `/` from the path, so a
+closing `</script>` becomes `<script>`, but the tag injection stands).
 
 ---
 
@@ -42,6 +119,15 @@ A fix has been proposed upstream but has not been merged at the time of writing:
 
 - Pull request: [Pull Request #78](https://github.com/themoos/core-moos/pull/78)
 - Proposed fix commit: [a3f26f099bb0](https://github.com/themoos/core-moos/commit/a3f26f099bb08decb143f704d8b1ca16ae405b44)
+
+### Recommended fix
+
+Escape at the point of output, per context: HTML-escape text nodes
+(`& < > " '`), attribute-escape and always quote attribute values, and
+URL-encode anything placed in a URL.  Introduce a tiny helper and use it
+everywhere rather than fixing individual sites.  Send
+`Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'` (or
+similar) and `X-Content-Type-Options: nosniff`.
 
 ---
 
